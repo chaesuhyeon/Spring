@@ -32,4 +32,14 @@ public class ConfigurationSingletonTest {
         assertThat(orderService.getMemberRepository()).isSameAs(memberRepository);
 
     }
+
+    @Test
+    void configurationDeep() {
+        ApplicationContext ac = new AnnotationConfigApplicationContext(AppConfig.class);
+        AppConfig bean = ac.getBean(AppConfig.class);
+
+        System.out.println("bean = " + bean.getClass()); // getClass라고 적어줘야 클래스 타입을 알 수 있음
+        // bean = class hello.core.order.AppConfig$$EnhancerBySpringCGLIB$$eac12086
+        // 내가만든 AppConfig가 나온 것이 아니라 , 클래스명에 xxxCGLIB가 붙어서 나옴.
+    }
 }
