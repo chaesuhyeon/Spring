@@ -21,9 +21,9 @@ import org.springframework.context.annotation.FilterType;
         // Configuration annotation 붙은 애를 빼줌 (AppConfig와 충돌나는 것을 방지하기 위해서)
 )
 public class AutoAppConfig {
-    @Bean(name = "memoryMemberRepository")
-    MemberRepository memberRepository() {
-        return new MemoryMemberRepository();
-    }
+//    @Bean(name = "memoryMemberRepository")  // 중복 빈 test라서 주석처리
+//    MemberRepository memberRepository() {
+//        return new MemoryMemberRepository();
+//    }
 
 }
