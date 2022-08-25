@@ -27,7 +27,7 @@ public class PrototypeTest {
         assertThat(prototypeBean1).isNotSameAs(prototypeBean2); // 프로토 타입은 다른 빈 반환(싱글톤타입과 다른 점)
 
         ac.close();
-        prototypeBean1.destory(); // 종료메서드 직접 호출 
+        prototypeBean1.destory(); // 종료메서드 직접 호출
     }
 
     @Scope("prototype")
