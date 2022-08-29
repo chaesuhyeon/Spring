@@ -13,8 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 @RequiredArgsConstructor
 public class LogDemoController {
     private final LogDemoService logDemoService;
-//    private final MyLogger myLogger;
-    private final ObjectProvider<MyLogger> myLoggerProvider;
+    private final MyLogger myLogger;
+//    private final ObjectProvider<MyLogger> myLoggerProvider;
 
 
     @RequestMapping("log-demo")
@@ -22,7 +22,9 @@ public class LogDemoController {
     public String logDemo(HttpServletRequest request) throws InterruptedException { // HttpServletRequest 사용하면 고객 요청 정보 받을 수 있음
 
         String requestURL = request.getRequestURL().toString();
-        MyLogger myLogger = myLoggerProvider.getObject();
+//        MyLogger myLogger = myLoggerProvider.getObject();
+
+        System.out.println("myLogger = " + myLogger.getClass());
         myLogger.setRequestURL(requestURL);
         myLogger.log("controller test");
         Thread.sleep(1000);
