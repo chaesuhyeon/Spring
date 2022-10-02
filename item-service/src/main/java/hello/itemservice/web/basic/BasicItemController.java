@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
@@ -132,12 +133,27 @@ public class BasicItemController {
      * 그러나 "redirect:/basic/items/" + item.getId(); 이런식으로 URL에 변수를 더해서 사용하는 것은 URL인코딩이 안되기 때문에 위험
      * RedirectAttribute 를 사용해서 해결
      */
-    @PostMapping("/add")
+    //@PostMapping("/add")
     public String addItemV5( Item item){
 
         itemRepository.save(item);
 
         return "redirect:/basic/items/" + item.getId();
+    }
+
+    /**
+     * RedirectAttribute 사용
+     * redirectAttributes.addAttribute( redirect와 관련된 속성을 넣음 );
+     * return문에서 사용되지 않는 속성들은 쿼리 파라미터로 넘어가게 됨 /basic/items/{itemId} ? status = true 형식
+     * ex) http://localhost:8080/basic/items/3?status=true
+     */
+    @PostMapping("/add")
+    public String addItemV6(Item item , RedirectAttributes redirectAttributes){
+
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId" , savedItem.getId()); //rediect와 관련된 속성을 넣음
+        redirectAttributes.addAttribute("status" , true); // 쿼리 파라미터로 들어감(return문에서 사용되지 않으므로)
+        return "redirect:/basic/items/{itemId}" ;
     }
 
     @GetMapping("/{itemId}/edit")
