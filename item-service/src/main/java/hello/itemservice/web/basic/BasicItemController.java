@@ -116,16 +116,55 @@ public class BasicItemController {
      *
      *  @ModelAttribute 가 생략된 경우에도 Item -> item으로 자동 적용되어 model.attribute("item", item) 자동 추가 됨
      */
-    @PostMapping("/add")
+    //@PostMapping("/add")
     public String addItemV4( Item item){
 
         itemRepository.save(item);
 
         return "basic/item"; // 상품 저장하면 상품 상세페이지에서 보여주려고
     }
-    @GetMapping("/edit")
-    public String editForm(){
+
+    /**
+     * PRG 패턴 이용
+     * 앞서 만들었던 /add 컨트롤러들은 post하고 뷰 템플릿으로 보여주기 때문에 마지막 url은 계속 /add로 남아있다.
+     * 그래서 새로고침을 하면 데이터가 계속 중복되어 생성되는 문제가 발생
+     * redirect 로 상품 상세페이지로 이동시키면 url을 바꿔버리는 것이기 때문에 /add가 아닌   /{itemId}이 된다.
+     * 그러나 "redirect:/basic/items/" + item.getId(); 이런식으로 URL에 변수를 더해서 사용하는 것은 URL인코딩이 안되기 때문에 위험
+     * RedirectAttribute 를 사용해서 해결
+     */
+    @PostMapping("/add")
+    public String addItemV5( Item item){
+
+        itemRepository.save(item);
+
+        return "redirect:/basic/items/" + item.getId();
+    }
+
+    @GetMapping("/{itemId}/edit")
+    public String editForm(@PathVariable Long itemId , Model model){
+
+        Item item = itemRepository.findById(itemId);
+        model.addAttribute("item", item);
+
         return "basic/editForm";
+    }
+
+
+
+    /**
+     * 리다이렉트
+     * 상품 수정은 뷰 템플릿을 호출하는 대신에 상품 상세화면응로 이동하도록 리다이렉트 호출
+     * redirect:/... 으로 편리하게 리다이렉트 지원
+     * "redirect:/basic/items/{itemId}"
+     * 컨트롤러에 매핑된 @PathVariable의 값은 redirect에도 사용할 수 있음
+     * {itemId}의 값은 @PathVariable Long itemId의 값을 그대로 사용
+     */
+    @PostMapping("/{itemId}/edit")
+    public String edit(@PathVariable Long itemId , @ModelAttribute Item item){
+
+        itemRepository.update(itemId , item);
+
+        return "redirect:/basic/items/{itemId}";
     }
 
     /**
