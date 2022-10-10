@@ -2,6 +2,7 @@ package hello.itemservice.web.form;
 
 import hello.itemservice.domain.item.Item;
 import hello.itemservice.domain.item.ItemRepository;
+import hello.itemservice.domain.item.ItemType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
@@ -29,6 +30,13 @@ public class FormItemController {
         regions.put("BUSAN" , "부산");
         regions.put("JEJU" , "제주");
         return regions;
+    }
+
+    @ModelAttribute("itemTypes")
+    public ItemType[] itemTypes(){
+//        ItemType[] values = ItemType.values(); ->  ItemType.values면 ENUM에 있는 값들을 배열로 반환해줌 [BOOK,FOOD,ETC]
+//        return values;
+        return ItemType.values(); // 위 코드를 inline으로 리펙토링
     }
 
     @GetMapping
@@ -72,7 +80,7 @@ public class FormItemController {
     public String addItem(@ModelAttribute Item item, RedirectAttributes redirectAttributes) {
         log.info("item.open={}" , item.getOpen()); // ex) item.open=false
         log.info("item.regions={}" , item.getRegions()); // ex) item.regions=[SEOUL, JEJU] , item.regions=[]
-
+        log.info("item.itemType={}" , item.getItemType()); // ex) item.itemType=BOOK , item.itemType=null
 
         Item savedItem = itemRepository.save(item);
         redirectAttributes.addAttribute("itemId", savedItem.getId());

@@ -58,6 +58,15 @@
         </div>
     </div>
 
+    <!--   radio button   -->
+    <div>
+        <div>상품 종류</div>
+        <div th:each="type:${itemTypes}" class="form-check form-check-inline">
+            <input type="radio" th:field="${item.itemType}" th:value="${type.name()}" class="form-check-input" disabled> <!-- itemType하고 value하고 같으면 checked 속성을 넣어줌 -->
+            <label th:for="${#ids.prev('itemType')}" th:text="${type.description}" class="form-check-label">BOOK</label> <!-- getXxxx()같이 프로퍼티 접근법을 사용하므로 type.description을 받아오려면 ItemType에 getDescription()메서드가 존재햐아함  -->
+        </div>
+    </div>
+
     <div class="row">
         <div class="col">
             <button class="w-100 btn btn-primary btn-lg"
