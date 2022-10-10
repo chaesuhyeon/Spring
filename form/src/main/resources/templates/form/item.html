@@ -48,6 +48,16 @@
         </div>
     </div>
 
+    <!--   multi checkbox   -->
+    <div>
+        <div>등록 지역</div>
+        <div th:each="region:${regions}" class="form-check form-check-inline">
+            <input type="checkbox" th:field="${item.regions}" th:value="${region.key}" class="form-check-input" disabled> <!-- th:field에 들어가는 *{regions}는 item의 regions임 -->
+            <label th:for="${#ids.prev('regions')}"
+                   th:text="${region.value}" class="form-check-label"></label> <!-- 위 input태그에서 id를 field로 자동생성해서 id값을 모르기 때문에 타임리프에서 #ids.prev(th:field에 넣은 값)로 지원 -->
+        </div>
+    </div>
+
     <div class="row">
         <div class="col">
             <button class="w-100 btn btn-primary btn-lg"
