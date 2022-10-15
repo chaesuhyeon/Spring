@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -44,44 +47,88 @@ public class ValidationItemControllerV2 {
 
 
     /**
-     *  검증로직 추가
-     *  검증에 실패하면 addForm으로 다시 보낸다
-     *  검증에 실패할 경우 input에 적은 값이 유지된 채로 addForm이 다시 보여짐
-     *  이유는 @GetMapping("/add") 할때 빈 객체 new Item()을 보내서 addForm에서 th:object를 사용했음
-     *  th:field값에서 각 name값 존재 -> input에 입력할 시 @PostMapping("/add")으로 요청이 가서, @ModelAttribute때문에 Item에 값이 그대로 들어간채로 addForm으로 다시 보내짐
-     *  addForm으로 다시 보내질 때 Item에 값이 들어간채로 다시 뿌려지기 때문에 input에 적었던 값이 사라지지 않고 그대로 남아있음
-     */ 
-    @PostMapping("/add")
-    public String addItem(@ModelAttribute Item item, RedirectAttributes redirectAttributes , Model model) {
-
-        // 검증 오류 결과를 보관
-        Map<String, String> errors = new HashMap<>();
+     * BindingResult 순서 중요
+     * public FieldError(String objectName, String field, String defaultMessage){}
+     * objectName : @ModelAttribute 이름
+     * field : 오류가 발생한 필드 이름
+     * defaultMessage : 오류 기본 메세지
+     */
+    //@PostMapping("/add")
+    public String addItemV1(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes , Model model) {
 
         // 검증 로직
         if(!StringUtils.hasText(item.getItemName())){ // 글자가 없으면
-            errors.put("itemName", "상품 이름은 필수입니다.");
+            bindingResult.addError(new FieldError("item" , "itemName" , "상품 이름은 필수입니다."));
+            // FieldError : 필드 에러 검증 시 사용
+            // new FieldError(Model에 넣어주는 객체, 필드명 , 오류 메세지)
         }
 
         if(item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() >1000000){
-            errors.put("price", "가격은 1,000 ~ 1,000,000 까지 허용합니다.");
+            bindingResult.addError(new FieldError("item" , "price" , "가격은 1,000 ~ 1,000,000 까지 허용합니다."));
+
         }
 
         if (item.getQuantity() == null || item.getQuantity() >= 9999){
-            errors.put("quantity", "수량은 최대 9,999 까지 허용합니다.");
+            bindingResult.addError(new FieldError("item" , "quantity" , "수량은 최대 9,999 까지 허용합니다."));
+
         }
 
         // 특정 필드가 아닌 복합 룰 검증
         if (item.getPrice() != null && item.getQuantity() != null) {
             int resultPrice = item.getPrice() * item.getQuantity();
             if(resultPrice < 10000){
-                errors.put("globalError", "가격 * 수량의 합은 10,000원 이상이어야 합니다. 현재 값 = " + resultPrice);
+                bindingResult.addError(new ObjectError("item" ,"가격 * 수량의 합은 10,000원 이상이어야 합니다. 현재 값 = " + resultPrice ));
+                // 특정 필드에러가 아니기 때문에  new ObjectError 사용
+
             }
         }
 
         // 검증에 실패하면 다시 입력 폼으로
-        if(!errors.isEmpty()){
-            log.info("errors ={}" , errors);
-            model.addAttribute("errors", errors); // 오류메세이가 하나라도 있으면 오류메시지를 출력하기 위해 model에 errors를 담고 입력 폼이 있는 뷰 템플릿으로 보냄
+        if(bindingResult.hasErrors()){
+            log.info("errors ={}" , bindingResult); // bindingResult는 자동으로 view에 넘어가기 때문에 model에 넣는 로직은 생략해도 됨
+            return "validation/v2/addForm";
+        }
+
+        // 성공 로직
+        Item savedItem = itemRepository.save(item);
+        redirectAttributes.addAttribute("itemId", savedItem.getId());
+        redirectAttributes.addAttribute("status", true);
+        return "redirect:/validation/v2/items/{itemId}";
+    }
+
+    @PostMapping("/add")
+    public String addItemV2(@ModelAttribute Item item, BindingResult bindingResult, RedirectAttributes redirectAttributes , Model model) {
+
+        // 검증 로직
+        if(!StringUtils.hasText(item.getItemName())){ // 글자가 없으면
+            bindingResult.addError(new FieldError("item" , "itemName" , item.getItemName(),false,null,null,"상품 이름은 필수입니다."));
+            // FieldError : 필드 에러 검증 시 사용
+            // new FieldError(Model에 넣어주는 객체, 필드명 , 오류 메세지)
+        }
+
+        if(item.getPrice() == null || item.getPrice() < 1000 || item.getPrice() >1000000){
+            bindingResult.addError(new FieldError("item" , "price" , item.getPrice(),false, null, null,"가격은 1,000 ~ 1,000,000 까지 허용합니다."));
+
+        }
+
+        if (item.getQuantity() == null || item.getQuantity() >= 9999){
+            bindingResult.addError(new FieldError("item" , "quantity" , item.getQuantity(), false, null, null,"수량은 최대 9,999 까지 허용합니다."));
+
+        }
+
+        // 특정 필드가 아닌 복합 룰 검증
+        if (item.getPrice() != null && item.getQuantity() != null) {
+            int resultPrice = item.getPrice() * item.getQuantity();
+            if(resultPrice < 10000){
+                bindingResult.addError(new ObjectError("item" ,null,null,"가격 * 수량의 합은 10,000원 이상이어야 합니다. 현재 값 = " + resultPrice ));
+                // 특정 필드에러가 아니기 때문에  new ObjectError 사용
+
+            }
+        }
+
+        // 검증에 실패하면 다시 입력 폼으로
+        if(bindingResult.hasErrors()){
+            log.info("errors ={}" , bindingResult); // bindingResult는 자동으로 view에 넘어가기 때문에 model에 넣는 로직은 생략해도 됨
             return "validation/v2/addForm";
         }
 
