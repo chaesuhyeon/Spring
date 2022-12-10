@@ -21,6 +21,10 @@ public class Order {
     @JoinColumn(name = "MEMBER_ID")
     private Member member;
 
+    @OneToOne
+    @JoinColumn(name = "DELEVERY_ID")
+    private Delivery delivery;
+
     @OneToMany(mappedBy = "order") // OrderItem의 ManyToOne의 order
     private List<OrderItem> orderItems = new ArrayList<>();
     private LocalDateTime orderDate;
