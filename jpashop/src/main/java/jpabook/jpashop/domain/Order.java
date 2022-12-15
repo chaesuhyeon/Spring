@@ -17,16 +17,17 @@ public class Order extends BaseEntity{
 //    @Column(name = "MEMBER_ID")
 //    private Long memberId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MEMBER_ID")
     private Member member;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY , cascade = CascadeType.ALL) // cascade : Order를 저장하면 Delivery도 같이 저장(persist를 Order 하나만 해도 자동으로 같이 저장)
     @JoinColumn(name = "DELEVERY_ID")
     private Delivery delivery;
 
-    @OneToMany(mappedBy = "order") // OrderItem의 ManyToOne의 order
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL) // OrderItem의 ManyToOne의 order , cascade : Order를 저장하면 OrderItem도 같이 저장
     private List<OrderItem> orderItems = new ArrayList<>();
+
     private LocalDateTime orderDate;
 
     @Enumerated(EnumType.STRING)
