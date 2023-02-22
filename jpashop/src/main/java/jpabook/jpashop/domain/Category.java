@@ -27,10 +27,19 @@ public class Category {
     private List<Item> items = new ArrayList<>();
 
     // 부모 - 자식 관계 설정
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Category parent;
 
     @OneToMany(mappedBy = "parent")
     private List<Category> child = new ArrayList<>();
+
+    //==연관관계 메서드==//
+    // db에서 값 저장은 연관관계의 주인쪽에서 해주겠지만, 양방향으로 원하는대로 값을 조회하기 위해서
+    // 이렇게 값을 넣어주는 메서드를 작성해준다.
+    // 연관관계 메서드의 작성 위치는 실질적으로 많이 조회하는 or 핵심적으로 컨트롤하는 곳에 적어주는게 좋다.
+    public void addChildCategory(Category child){
+        this.child.add(child);
+        child.setParent(this);
+    }
 }
