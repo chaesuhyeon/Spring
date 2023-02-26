@@ -1,6 +1,8 @@
 package jpabook.jpashop.domain;
 
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
@@ -11,6 +13,7 @@ import java.util.List;
 @Entity
 @Table(name = "orders") // order가 예약어라서 orders로 명칭 변경
 @Getter @Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED) // 접근제어자 protected 기본생성자
 public class Order {
 
     @Id @GeneratedValue
@@ -52,5 +55,54 @@ public class Order {
         this.delivery = delivery;
         delivery.setOrder(this);
     }
+
+
+    //==생성 메서드==//
+    public static Order createOrder(Member member , Delivery delivery, OrderItem... orderItems){ // OrderItem은 여러개 가능(여러개 넘길 수 있음)
+        Order order = new Order();
+        order.setMember(member);
+        order.setDelivery(delivery);
+        for (OrderItem orderItem : orderItems) {
+            order.addOrderItem(orderItem);
+        }
+        order.setStatus(OrderStatus.ORDER); // 주문 상태
+        order.setOrderDate(LocalDateTime.now()); // 주문 시간
+        return order;
+    }
+
+    //==비즈니스 로직==//
+    /**
+     * 주문 취소
+     * 재고 수량을 변경해줘야 함
+     * 배송이 끝나면 주문 취소 불가
+     */
+    public void cancel() {
+
+        //배송이 끝나면 주문 취소 불가
+        if(delivery.getStatus() == DeliveryStatus.COMP){
+            throw new IllegalStateException("이미 배송완료된 상품은 취소가 불가능합니다.");
+        }
+
+        this.setStatus(OrderStatus.CANCEL);
+        for (OrderItem orderItem : orderItems) {
+            orderItem.cancel(); // 상품에도 취소를 해줘야함
+        }
+    }
+
+    //==조회 로직==//
+    /**
+     * 전체 주문 가격 조회
+     */
+    public int getTotalPrice(){
+        int totalPrice = orderItems.stream().mapToInt(OrderItem::getTotalPrice).sum(); // 0으로 초기화
+       /*
+        for (OrderItem orderItem : orderItems) {
+            totalPrice += orderItem.getTotalPrice();
+        }
+        */
+        return totalPrice;
+    }
+
+
 
 }
