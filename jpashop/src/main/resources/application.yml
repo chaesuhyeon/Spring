@@ -4,6 +4,8 @@ spring:
     username: sa
     password:
     driver-class-name: org.h2.Driver
+  thymeleaf:
+    cache: false #타임리프 재시작 안해도 수정 반영하는 옵션
 
 
   jpa:
