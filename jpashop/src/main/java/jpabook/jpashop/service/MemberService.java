@@ -47,4 +47,9 @@ public class MemberService {
 
     }
 
+    @Transactional
+    public void update(Long id, String name) {
+        Member member = memberRepository.findOne(id); // 트랜잭션이 있는 상태에서 조회하면 영속성 상태 객체를 반환
+        member.setName(name); // 변경 감지에 의한 수정 (따로 repository에 있는 save 메서드 사용을 하지 않아도 변경감지에 의해 수정이 됨)
+    }
 }
