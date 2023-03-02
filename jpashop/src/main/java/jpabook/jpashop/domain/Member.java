@@ -5,6 +5,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import javax.print.attribute.standard.MediaSize;
+import javax.validation.constraints.NotEmpty;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,7 @@ public class Member {
     @Column(name = "member_id")
     private Long Id;
 
+    @NotEmpty
     private String name;
 
     @Embedded //Address 클래스에서는 @Embeddable 사용(두 곳중에 한곳에만 어노테이션 사용 가능하지만 두 곳다 적어줌)
