@@ -96,4 +96,17 @@ public class OrderRepository {
                         " join fetch o.delivery d" , Order.class
         ).getResultList();
     }
+
+    // 패치 조인
+    public List<Order> findAllWithItem() {
+        return em.createQuery(
+                "select distinct o from Order o" + // order는 2개인데 orderItem은 4개이므로 join을 하고 order룰 조회하면 2개가 나와야하는데 4개가 나옴(뻥튀기 문제)
+                        " join fetch o.member m" +
+                        " join fetch o.delivery d" +
+                        " join fetch o.orderItems oi" +
+                        " join fetch oi.item i" , Order.class)
+//                .setFirstResult(1) -> 일대다 패치 조인에서는 페이징 쿼리 사용하면 안됨
+//                .setMaxResults(100)-> 일대다 패치 조인에서는 페이징 쿼리 사용하면 안됨
+                .getResultList();
+    }
 }
