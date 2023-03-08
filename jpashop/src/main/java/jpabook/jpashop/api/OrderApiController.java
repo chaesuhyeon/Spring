@@ -2,6 +2,7 @@ package jpabook.jpashop.api;
 
 import jpabook.jpashop.domain.*;
 import jpabook.jpashop.repository.OrderRepository;
+import jpabook.jpashop.repository.order.query.OrderFlatDto;
 import jpabook.jpashop.repository.order.query.OrderQueryDto;
 import jpabook.jpashop.repository.order.query.OrderQueryRepository;
 import lombok.Data;
@@ -72,10 +73,30 @@ public class OrderApiController {
 
     /**
      * JPA에서 DTO 직접 조회 (컬렉션 포함)
+     * N+1문제 존재
      */
     @GetMapping("/api/v4/orders")
     public List<OrderQueryDto> ordersV4(){
         return orderQueryRepository.findOrderQueryDtos();
+    }
+
+    /**
+     * JPA에서 DTO로 직접 조회
+     * 컬렉션 조회 최적화
+     */
+    @GetMapping("/api/v5/orders")
+    public List<OrderQueryDto> ordersV5(){
+        return orderQueryRepository.findAllByDto_optimization();
+    }
+
+    /**
+     * JPA에서 DTO로 직접 조회
+     * 플랫 데이터 최적화
+     * 쿼리는 1번으로 나가지만, 조인으로 인해 DB에서 애플리케이션에 전달하는 데이터에 중복 데이터가 추가되는 문제점
+     */
+    @GetMapping("/api/v6/orders")
+    public List<OrderFlatDto> ordersV6(){
+        return orderQueryRepository.findAllByDto_flat();
     }
 
     @Getter
