@@ -1,11 +1,13 @@
 package jpabook.jpashop.repository.order.query;
-
 import jpabook.jpashop.domain.Address;
 import jpabook.jpashop.domain.OrderStatus;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
+/**
+ * 화면을 위한 Dto
+ * query 패키지를 만들어서 화면단 계층에 만들어줌
+ */
 @Data
 public class OrderFlatDto {
     private Long orderId;
