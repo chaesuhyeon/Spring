@@ -2,6 +2,7 @@ package jpabook.jpashop.service;
 
 import jpabook.jpashop.domain.Member;
 import jpabook.jpashop.repository.MemberRepository;
+import jpabook.jpashop.repository.MemberRepositoryOld;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,12 +29,12 @@ public class MemberService {
     // 회원 전체 조회
     //@Transactional(readOnly = true) //readOnly = true로 주면 jpa가 조회하는 곳에서는 성능을 조금 더 최적화 해준다
     public List<Member> findMembers(){
-        return memberRepository.fineAll();
+        return memberRepository.findAll();
     }
 
     //@Transactional(readOnly = true)
     public Member findOne(Long memberId){
-        return memberRepository.findOne(memberId);
+        return memberRepository.findById(memberId).get();
     }
 
     /**
@@ -49,7 +50,7 @@ public class MemberService {
 
     @Transactional
     public void update(Long id, String name) {
-        Member member = memberRepository.findOne(id); // 트랜잭션이 있는 상태에서 조회하면 영속성 상태 객체를 반환
+        Member member = memberRepository.findById(id).get(); // 트랜잭션이 있는 상태에서 조회하면 영속성 상태 객체를 반환
         member.setName(name); // 변경 감지에 의한 수정 (따로 repository에 있는 save 메서드 사용을 하지 않아도 변경감지에 의해 수정이 됨)
     }
 }
