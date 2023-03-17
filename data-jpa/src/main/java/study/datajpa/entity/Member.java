@@ -8,6 +8,9 @@ import javax.persistence.*;
 @Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // 기본 생성자 만들어줘야함
 @ToString(of = {"id", "username", "age"}) // 객체 바로 찍어도 출력되게 , 연관관계 필드 (ex.team)은 toString에 넣게 되면 서로 참조하게 돼서 무한루프 돌 수 있으니 넣지 말아야함
+@NamedQuery(
+        name="Member.findByUsername",
+        query="select m from Member m where m.username = :username")
 public class Member {
 
     @Id @GeneratedValue
