@@ -59,4 +59,24 @@ public class MemberJpaRepository {
         return resultList;
     }
 
+    /**
+     * 순수 JPA 페이징
+     */
+    public List<Member> findByPage(int age, int offset, int limit){
+        return em.createQuery("select m from Member m where m.age = :age order by m.username desc",Member.class)
+                .setParameter("age", age)
+                .setFirstResult(offset) // 어디서부터 가져올 것인지
+                .setMaxResults(limit) // 가져올 개수
+                .getResultList();
+    }
+
+    /**
+     * 순수 페이징
+     * totalCount
+     */
+    public long totalCount(int age){
+        return em.createQuery("select count(m) from Member m where m.age = :age", Long.class) // count(m)는 long으로 반환된다. 따라서 메서드 반환 타입을 long으로 지정
+                .setParameter("age", age)
+                .getSingleResult();
+    }
 }

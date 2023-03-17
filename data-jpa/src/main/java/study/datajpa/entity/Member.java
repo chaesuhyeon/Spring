@@ -3,6 +3,7 @@ package study.datajpa.entity;
 import lombok.*;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter @Setter
@@ -53,5 +54,4 @@ public class Member {
         this.team = team;
         team.getMembers().add(this);
     }
-
 }
