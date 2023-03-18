@@ -13,6 +13,8 @@ import study.datajpa.dto.MemberDto;
 import study.datajpa.entity.Member;
 import study.datajpa.entity.Team;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,9 @@ class MemberRepositoryTest {
 
     @Autowired
     TeamRepository teamRepository;
+
+    @PersistenceContext
+    EntityManager em;
 
     @Test
     public void testMember(){
@@ -254,5 +259,64 @@ class MemberRepositoryTest {
         assertThat(page.hasNext()).isTrue(); // 다음페이지 유무
 
     }*/
+
+    @Test
+    public void bulkUpdate(){
+        // given
+        memberRepository.save(new Member("member1", 10));
+        memberRepository.save(new Member("member2", 19));
+        memberRepository.save(new Member("member3", 20));
+        memberRepository.save(new Member("member4", 21));
+        memberRepository.save(new Member("member5", 40));
+
+        // when
+        int resultCount = memberRepository.bulkAgePlus(20);// 20살과 같거나 큰 사람은 age + 1;
+
+        //em.flush(); // 변경되지 않은 내용이 db에 반영
+        //em.clear(); // 영속성 상태에 있는 데이터 다 날림 --> MemberRepository에서 @Modifying(clearAutomatically = true) 해주면 em.claer()를 여기서 안적어도 됨
+
+        List<Member> result = memberRepository.findByUsername("member5"); // 깔끔하게 db에서 다시 조회
+        Member member5 = result.get(0);
+        System.out.println("member5 = " + member5); // flush, clear를 안하고 조회하면 40살로 나옴 -> clear를 하면 41로 나옴(정상)
+
+        // then
+        assertThat(resultCount).isEqualTo(3); // 20 , 21 , 40 살만 count
+    }
+
+    /**
+     * @EntityGraph 테스트
+     * findMemberFetchJoin : 패치 조인
+     * findAll : EntityGraph
+     *
+     */
+    @Test
+    public void findMemberLazy(){
+        // given
+        // member1 -> teamA
+        // member2 -> teamB
+
+        Team teamA = new Team("teamA");
+        Team teamB = new Team("teamB");
+        teamRepository.save(teamA);
+        teamRepository.save(teamB);
+
+        Member member1 = new Member("member1", 10, teamA);
+        Member member2 = new Member("member2", 10, teamB);
+        memberRepository.save(member1);
+        memberRepository.save(member2);
+
+        em.flush(); // 영속성 컨텍스트에 있는 캐시들을 db에 insert해서 다 반영
+        em.clear(); // 영속성 컨텍스트의 캐시들을 다 날림
+
+        // when
+//        List<Member> members = memberRepository.findMemberFetchJoin(); -> fetchjoin
+//        List<Member> members = memberRepository.findAll();
+        List<Member> members = memberRepository.findEntityGraphByUsername("member1");
+
+        for (Member member : members) {
+            System.out.println("member = " + member.getUsername());
+            System.out.println("member.team =  "  + member.getTeam().getName());
+        }
+    }
 
 }
