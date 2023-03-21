@@ -6,6 +6,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import study.datajpa.dto.MemberDto;
+import study.datajpa.dto.MemberProjection;
 import study.datajpa.dto.UsernameOnlyDto;
 import study.datajpa.entity.Member;
 
@@ -137,4 +138,20 @@ public interface MemberRepository extends JpaRepository<Member,Long> , MemberRep
     List<Member> findLockByUsername(String username);
 
     <T> List<T> findProjectionsByUsername(@Param("username") String username , Class<T> type);
+
+    /**
+     * 네이티브 쿼리
+     */
+    @Query(value = "select * from member where username = ?" , nativeQuery = true)
+    Member findByNativeQuery(String username);
+
+    /**
+     * 네이티브 쿼리
+     * Projections 활용
+     */
+    @Query(value = "select m.member_id as id , m.username, t.name as teamName" +
+            "from member m left join team t" ,
+            countQuery = "select count(*) from member", // native 쿼리라서 count 쿼리 직접 작성해야 함
+            nativeQuery = true)
+    Page<MemberProjection> findByNativeProjection(Pageable pageable);
 }
