@@ -170,9 +170,28 @@ public class QuerydslBasicTest {
 
     @Test
     public void paging1(){
-        queryFactory
+        List<Member> result = queryFactory
                 .selectFrom(member)
-                .
+                .orderBy(member.username.desc())
+                .offset(1)
+                .limit(2)
+                .fetch();
+        assertThat(result.size()).isEqualTo(2);  //limit을 2로 했으니 size가 2가 나와야 함
+    }
+
+    @Test
+    public void paging2(){
+        QueryResults<Member> result = queryFactory
+                .selectFrom(member)
+                .orderBy(member.username.desc())
+                .offset(1)
+                .limit(2)
+                .fetchResults(); // total Count가 필요하면 fetchResults 사용
+
+        assertThat(result.getTotal()).isEqualTo(4);
+        assertThat(result.getLimit()).isEqualTo(2);
+        assertThat(result.getOffset()).isEqualTo(1);
+        assertThat(result.getResults().size()).isEqualTo(2);
     }
 }
 
