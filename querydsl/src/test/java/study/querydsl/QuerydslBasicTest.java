@@ -2,6 +2,10 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +24,7 @@ import javax.persistence.PersistenceUnit;
 
 import java.util.List;
 
+import static com.querydsl.jpa.JPAExpressions.*;
 import static org.assertj.core.api.Assertions.*;
 import static study.querydsl.entity.QMember.*;
 import static study.querydsl.entity.QTeam.team;
@@ -395,6 +400,182 @@ public class QuerydslBasicTest {
 
         boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam()); // 지연로딩 테스트 하기 위해 사용(Team은 불러와지면 안됨)
         assertThat(loaded).as("페치 조인 미적용").isTrue();
+    }
+
+    /**
+     * 서브 쿼리 eq 사용
+     * 나이가 가장 많은 회원 조회
+     */
+    @Test
+    public void subQuery_eq(){
+
+        QMember memberSub = new QMember("memberSub"); // alias가 겹친다면 Q-Type을 새롭게 생성해줘야함
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.eq(
+                        select(memberSub.age.max()) // 40살이 최대
+                                .from(memberSub)
+                ))
+                .fetch();
+
+        assertThat(result)
+                .extracting("age")
+                .containsExactly(40);
+    }
+
+    /**
+     * 서브 쿼리 goe 사용
+     * 나이가 평균 이상인 회원
+     */
+    @Test
+    public void subQuery_goe(){
+
+        QMember memberSub = new QMember("memberSub"); // alias가 겹친다면 Q-Type을 새롭게 생성해줘야함
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.goe(
+                        select(memberSub.age.avg())  // 평균 : 25
+                                .from(memberSub)
+                ))
+                .fetch();
+
+        assertThat(result)
+                .extracting("age")
+                .containsExactly(30,40);
+    }
+
+    /**
+     * 서브 쿼리 in 사용
+     */
+    @Test
+    public void subQuery_in(){
+
+        QMember memberSub = new QMember("memberSub"); // alias가 겹친다면 Q-Type을 새롭게 생성해줘야함
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.in(
+                        select(memberSub.age)
+                                .from(memberSub)
+                                .where(memberSub.age.gt(10)) // 20,30,40
+                ))
+                .fetch();
+
+        assertThat(result)
+                .extracting("age")
+                .containsExactly(20,30,40);
+    }
+
+    /**
+     * select 절에 subquery
+     */
+    @Test
+    public void selectSubQuery(){
+        QMember memberSub = new QMember("memberSub"); // alias가 겹친다면 Q-Type을 새롭게 생성해줘야함
+        List<Tuple> result = queryFactory
+                .select(
+                        member.username,
+                        select(memberSub.age.avg())
+                                .from(memberSub))
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+
+/*        tuple = [member1, 25.0]
+        tuple = [member2, 25.0]
+        tuple = [member3, 25.0]
+        tuple = [member4, 25.0]*/
+     }
+
+    /**
+     * case 문
+     */
+    @Test
+     public void basicCase(){
+        List<String> result = queryFactory
+                .select(
+                        member.age
+                                .when(10).then("열살")
+                                .when(20).then("스무살")
+                                .otherwise("기타"))
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+
+/*      s = 열살
+        s = 스무살
+        s = 기타 // age 30
+        s = 기타 // age 40
+*/
+    }
+
+    /**
+     * 복잡한 Case문
+     */
+    @Test
+    public void complexCase(){
+        List<String> result = queryFactory
+                .select(new CaseBuilder()
+                        .when(member.age.between(0, 20)).then("0~20살")
+                        .when(member.age.between(21, 30)).then("21~30살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+
+  /*      s = 0~20살
+        s = 0~20살
+        s = 21~30살
+        s = 기타*/
+    }
+
+    /**
+     * 상수 constant
+     */
+    @Test
+    public void constant(){
+        List<Tuple> result = queryFactory
+                .select(member.username, Expressions.constant("A"))
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+
+/*      tuple = [member1, A]
+        tuple = [member2, A]
+        tuple = [member3, A]
+        tuple = [member4, A]
+*/
+    }
+
+    /**
+     * 문자 더하기 concat
+     */
+    @Test
+    public void concat(){
+        List<String> result = queryFactory
+                .select(member.username.concat("_").concat(member.age.stringValue())) // age는 type이 int라서 string으로 변환
+                .from(member)
+                .where(member.username.eq("member1"))
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+        // s = member1_10 -> 이름 member 1 + "_" + 나이 10
     }
 }
 
