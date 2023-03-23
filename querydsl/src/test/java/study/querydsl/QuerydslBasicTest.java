@@ -3,6 +3,8 @@ package study.querydsl;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -13,6 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.QMemberDto;
+import study.querydsl.dto.UserDto;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
 import study.querydsl.entity.QTeam;
@@ -577,5 +582,200 @@ public class QuerydslBasicTest {
         }
         // s = member1_10 -> 이름 member 1 + "_" + 나이 10
     }
+
+    /**
+     * 프로젝션 대상이 하나일 때
+     */
+    @Test
+    public void simpleProjection(){
+        List<String> reuslt = queryFactory
+                .select(member.username)
+                .from(member)
+                .fetch();
+
+        for (String s : reuslt) {
+            System.out.println("s = " + s);
+        }
+
+/*
+        s = member1
+        s = member2
+        s = member3
+        s = member4
+*/
+    }
+
+    /**
+     * 프로젝션 대상이 둘 이상일 때
+     * 튜플로 조회
+     */
+    @Test
+    public void tupleProjection(){
+        List<Tuple> result = queryFactory
+                .select(member.username, member.age)
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            String username = tuple.get(member.username);
+            Integer age = tuple.get(member.age);
+            System.out.println("username = " + username);
+            System.out.println("age = " + age);
+        }
+/*
+        username = member1
+        age = 10
+        username = member2
+        age = 20
+        username = member3
+        age = 30
+        username = member4
+        age = 40
+ */
+    }
+
+    /**
+     * DTO로 반환 JPQL 사용
+     */
+    @Test
+    public void findDtoByJPQL(){
+        List<MemberDto> result = em.createQuery(
+                        "select " +
+                                "new study.querydsl.dto.MemberDto(m.username, m.age) " +
+                                "from Member m", MemberDto.class)
+                .getResultList();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+/*
+        memberDto = MemberDto(username=member1, age=10)
+        memberDto = MemberDto(username=member2, age=20)
+        memberDto = MemberDto(username=member3, age=30)
+        memberDto = MemberDto(username=member4, age=40)
+ */
+    }
+
+    /**
+     * DTO로 반환
+     * 프로퍼티 접근 - Setter
+     */
+    @Test
+    public void findDtoBySetter(){
+        List<MemberDto> result = queryFactory
+                .select(Projections.bean(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+/*        memberDto = MemberDto(username=member1, age=10)
+        memberDto = MemberDto(username=member2, age=20)
+        memberDto = MemberDto(username=member3, age=30)
+        memberDto = MemberDto(username=member4, age=40)*/
+    }
+
+    /**
+     * DTO로 반환
+     * 필드 직접 접근
+     */
+    @Test
+    public void findDtoByField(){
+        List<MemberDto> result = queryFactory
+                .select(Projections.fields(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+/*        memberDto = MemberDto(username=member1, age=10)
+        memberDto = MemberDto(username=member2, age=20)
+        memberDto = MemberDto(username=member3, age=30)
+        memberDto = MemberDto(username=member4, age=40)*/
+    }
+
+    /**
+     * DTO로 반환
+     * 생성자 사용
+     */
+    @Test
+    public void findDtoByConstructor(){
+        List<MemberDto> result = queryFactory
+                .select(Projections.constructor(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+/*        memberDto = MemberDto(username=member1, age=10)
+        memberDto = MemberDto(username=member2, age=20)
+        memberDto = MemberDto(username=member3, age=30)
+        memberDto = MemberDto(username=member4, age=40)*/
+    }
+
+    /**
+     * DTO로 반환
+     * 별칭이 다를 때
+     */
+    @Test
+    public void findUserDto(){
+        QMember memberSub = new QMember("memberSub"); // alias가 겹친다면 Q-Type을 새롭게 생성해줘야함
+
+        List<UserDto> result = queryFactory
+                .select(Projections.fields(UserDto.class,
+                        member.username.as("name"), // 별칭 지정을 안해주면 member의 username과 userDto의 name이 매칭이 안돼서 null로 나옴
+                        ExpressionUtils.as(
+                                JPAExpressions
+                                        .select(member.age.max())
+                                        .from(memberSub), "age")
+                ))
+                .from(member)
+                .fetch();
+
+        for (UserDto userDto : result) {
+            System.out.println("userDto = " + userDto);
+        }
+/*
+        userDto = UserDto(name=member1, age=40)
+        userDto = UserDto(name=member2, age=40)
+        userDto = UserDto(name=member3, age=40)
+        userDto = UserDto(name=member4, age=40)
+ */
+    }
+
+    /**
+     * @QueryProjection
+     */
+    @Test
+    public void findDtoByQueryProjection(){
+        List<MemberDto> result = queryFactory
+                .select(new QMemberDto(member.username, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+/*
+        memberDto = MemberDto(username=member1, age=10)
+        memberDto = MemberDto(username=member2, age=20)
+        memberDto = MemberDto(username=member3, age=30)
+        memberDto = MemberDto(username=member4, age=40)
+ */
+
+    }
+
 }
 
