@@ -1,6 +1,7 @@
 package study.querydsl;
 
 import com.querydsl.core.QueryResults;
+import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,14 +11,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.entity.Member;
 import study.querydsl.entity.QMember;
+import study.querydsl.entity.QTeam;
 import study.querydsl.entity.Team;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceUnit;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static study.querydsl.entity.QMember.*;
+import static study.querydsl.entity.QTeam.team;
 
 @SpringBootTest
 @Transactional
@@ -192,6 +197,204 @@ public class QuerydslBasicTest {
         assertThat(result.getLimit()).isEqualTo(2);
         assertThat(result.getOffset()).isEqualTo(1);
         assertThat(result.getResults().size()).isEqualTo(2);
+    }
+
+    /**
+     * 집합
+     * Tuple로 반환됨
+     */
+    @Test
+    public void aggregation(){
+        List<Tuple> result = queryFactory
+                .select(
+                        member.count(),
+                        member.age.sum(),
+                        member.age.avg(),
+                        member.age.max(),
+                        member.age.min()
+                )
+                .from(member)
+                .fetch();
+
+        Tuple tuple = result.get(0);
+        assertThat(tuple.get(member.count())).isEqualTo(4);
+        assertThat(tuple.get(member.age.sum())).isEqualTo(100);
+        assertThat(tuple.get(member.age.avg())).isEqualTo(25);
+        assertThat(tuple.get(member.age.max())).isEqualTo(40);
+        assertThat(tuple.get(member.age.min())).isEqualTo(10);
+    }
+
+    /**
+     * group by
+     * 팀의 이름과 각 팀의 평균 연령을 구해라
+     */
+    @Test
+    public void group(){
+        List<Tuple> result = queryFactory
+                .select(
+                        team.name,
+                        member.age.avg())
+                .from(member)
+                .join(member.team, team)
+                .groupBy(team.name)
+                .fetch();
+
+        Tuple teamA = result.get(0);
+        Tuple teamB = result.get(1);
+
+        assertThat(teamA.get(team.name)).isEqualTo("teamA");
+        assertThat(teamA.get(member.age.avg())).isEqualTo(15); // (10+20)/2
+
+        assertThat(teamB.get(team.name)).isEqualTo("teamB");
+        assertThat(teamB.get(member.age.avg())).isEqualTo(35); // (30+40)/2
+    }
+
+    /**
+     * 기본 조인
+     */
+    @Test
+    public void join(){
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .join(member.team, team) // team은 QTeam.team  , join 말고 leftJoin, rightJoin도 가능
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+        assertThat(result)
+                .extracting("username")
+                .containsExactly("member1", "member2");
+    }
+
+    /**
+     * 세타 조인
+     * 연관관계가 없어도 join 가능
+     * 회원의 이름이 팀 이름과 같은 회원 조회(말도 안되는 예제지만 한번 해봄)
+     */
+    @Test
+    public void theta_join(){
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC")); // team name이 teamC는 없기 때문에 이름이 teamC인 회원은 join 결과에 나오지 않음
+
+        List<Member> result = queryFactory
+                .select(member)
+                .from(member, team) // 두개 그냥 나열
+                .where(member.username.eq(team.name))
+                .fetch();
+
+        assertThat(result)
+                .extracting("username")
+                .containsExactly("teamA", "teamB");
+    }
+
+    /**
+     * join - on절 예제
+     * ex) 회원과 팀을 조인하면서, 팀 이름이 teamA인 팀만 조회, 회원은 모두 조회
+     * JPQL : select m,t from Member m left join m.team t on t.name = 'teamA'
+     */
+    @Test
+    public void join_on_filtering(){
+        //외부 조인
+       List<Tuple> result1 = queryFactory // 반환 타입이 Tuple로 나온 이유는 select 할 때 여러가지 타입으로 나왔기 때문
+                .select(member, team)
+                .from(member)
+                .leftJoin(member.team, team).on(team.name.eq("teamA"))
+                .fetch();
+
+        // 내부조인 - on절사용
+        List<Tuple> result2 = queryFactory // 반환 타입이 Tuple로 나온 이유는 select 할 때 여러가지 타입으로 나왔기 때문
+                .select(member, team)
+                .from(member)
+                .join(member.team, team).on(team.name.eq("teamA"))
+                .fetch();
+
+        // 내부조인 - where절사용(내부조인-on 결과와 똑같음)
+        List<Tuple> result3 = queryFactory // 반환 타입이 Tuple로 나온 이유는 select 할 때 여러가지 타입으로 나왔기 때문
+                .select(member, team)
+                .from(member)
+                .join(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+        for (Tuple tuple : result1) {
+            System.out.println("tuple = " + tuple);
+        }
+
+/*        tuple = [Member(id=3, username=member1, age=10), Team(id=1, name=teamA)]
+        tuple = [Member(id=4, username=member2, age=20), Team(id=1, name=teamA)]
+        tuple = [Member(id=5, username=member3, age=30), null] // on절에서 teamA인 회원만 가져오도록 했기 때문에 teamB는 null로 나옴(left join이라서.. 그냥 join으로 하면 member1,2만 나옴)
+        tuple = [Member(id=6, username=member4, age=40), null] */
+    }
+
+    /**
+     * 연관관계 없는 엔티티 외부 조인
+     * 회원의 이름이 팀 이름과 같은 회원 조회(말도 안되는 예제지만 한번 해봄)
+     */
+    @Test
+    public void join_on_no_relation(){
+        em.persist(new Member("teamA"));
+        em.persist(new Member("teamB"));
+        em.persist(new Member("teamC")); // team name이 teamC는 없기 때문에 이름이 teamC인 회원은 join 결과에 나오지 않음
+
+        List<Tuple> result = queryFactory
+                .select(member, team)
+                .from(member)
+                // join문 문법 다름!! 원래는 join(member.team, team) 으로 해야함 ,
+                // 그리고 연관관계 없는 엔티티 조인할 때 세타조인도 사용할 수 있었는데, 세타조인은 외부 조인 안됐음 -> on으로 해결
+                .leftJoin(team).on(member.username.eq(team.name))
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+        }
+
+/*        tuple = [Member(id=3, username=member1, age=10), null]
+        tuple = [Member(id=4, username=member2, age=20), null]
+        tuple = [Member(id=5, username=member3, age=30), null]
+        tuple = [Member(id=6, username=member4, age=40), null]
+        tuple = [Member(id=7, username=teamA, age=0), Team(id=1, name=teamA)]
+        tuple = [Member(id=8, username=teamB, age=0), Team(id=2, name=teamB)]
+        tuple = [Member(id=9, username=teamC, age=0), null]*/
+    }
+
+    /**
+     * 페치 조인 미적용
+     */
+    @PersistenceUnit
+    EntityManagerFactory emf;
+
+    @Test
+    public void fetchJoinNo(){
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam()); // 지연로딩 테스트 하기 위해 사용(Team은 불러와지면 안됨)
+        assertThat(loaded).as("페치 조인 미적용").isFalse();
+    }
+
+    /**
+     * 페치 조인 적용
+     */
+/*    @PersistenceUnit
+    EntityManagerFactory emf;*/
+    @Test
+    public void fetchJoinUse(){
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .join(member.team, team).fetchJoin() // fetchJoin 사용
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam()); // 지연로딩 테스트 하기 위해 사용(Team은 불러와지면 안됨)
+        assertThat(loaded).as("페치 조인 미적용").isTrue();
     }
 }
 
