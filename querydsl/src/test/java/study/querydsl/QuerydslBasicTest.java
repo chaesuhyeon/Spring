@@ -1,10 +1,13 @@
 package study.querydsl;
 
+import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Expression;
 import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
 import study.querydsl.dto.QMemberDto;
@@ -775,6 +779,172 @@ public class QuerydslBasicTest {
         memberDto = MemberDto(username=member4, age=40)
  */
 
+    }
+
+    /**
+     * 동적 쿼리
+     * BooleanBuilder
+     */
+    @Test
+    public void dynamicQuery_BooleanBuilder() throws Exception {
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+
+        List<Member> result = searchMember1(usernameParam, ageParam);
+        assertThat(result.size()).isEqualTo(1);
+    }
+
+    private List<Member> searchMember1(String usernameCond, Integer ageCond) {
+        BooleanBuilder builder = new BooleanBuilder(member.username.eq(usernameCond)); // 초기값 넣어줄 수도 있음(null이 아닌 가정 하에)
+//        BooleanBuilder builder = new BooleanBuilder();
+        if (usernameCond != null) { // null이 아니면 조건에 추가
+            builder.and(member.username.eq(usernameCond));
+        }
+        if (ageCond != null) { // null이 아니면 조건에 추가
+            builder.and(member.age.eq(ageCond));
+        }
+        return queryFactory
+                .selectFrom(member)
+                .where(builder) // 조건 넣어줌
+                .fetch();
+    }
+
+    /**
+     * 동적 쿼리
+     * Where 다중 파라미터
+     */
+    @Test
+    public void dynamicQuery_WhereParam() throws Exception {
+        String usernameParam = "member1";
+        Integer ageParam = 10;
+
+        List<Member> result = searchMember2(usernameParam, ageParam);
+        assertThat(result.size()).isEqualTo(1);
+    }
+
+    private List<Member> searchMember2(String usernameCond, Integer ageCond) {
+        return queryFactory
+                .selectFrom(member)
+                .where(allEq(usernameCond, ageCond))
+                .fetch();
+    }
+
+
+    private BooleanExpression usernameEq(String usernameCond) {
+        return usernameCond == null ? null : member.username.eq(usernameCond); // usernameCond가 null이면 null을 반환. 그렇지 않으면 조건 반환
+    }
+    private BooleanExpression ageEq(Integer ageCond) {
+        return ageCond == null ? null : member.age.eq(ageCond); // usernameCond가 null이면 null을 반환. 그렇지 않으면 조건 반환
+
+    }
+
+    private BooleanExpression allEq(String usernameCond, Integer ageCond) {
+        return usernameEq(usernameCond).and(ageEq(ageCond)); // usernameCond가 null이면 null을 반환. 그렇지 않으면 조건 반환
+
+    }
+
+    /**
+     * 벌크 연산 - 수정
+     */
+    @Test
+    public void bulkUpdate(){
+
+        // member1 = 10 -> 비회원
+        // member2 = 20 -> 비회원
+        // member3 = 30 -> member3
+        // member4 = 40 -> member4
+
+        // count : 영향을 받는 row 수가 나옴
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+        em.flush();
+        em.clear(); // 영속성 컨텍스트 초기화
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .fetch();
+    }
+
+    /**
+     * 벌크 연산 - 더하기
+     */
+    @Test
+    public void bulkAdd(){
+        long count = queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1))
+                .execute();
+    }
+
+    /**
+     * 벌크 연산 - 곱하기
+     */
+    @Test
+    public void bulkMultiply(){
+        long count = queryFactory
+                .update(member)
+                .set(member.age, member.age.multiply(1))
+                .execute();
+    }
+
+    /**
+     * 벌크 연산 - 삭제
+     */
+    @Test
+    public void bulkDelete(){
+        long count = queryFactory
+                .delete(member)
+                .where(member.age.gt(18)) // 18살 이상의 회원을 지움
+                .execute();
+    }
+
+    /**
+     * SQL function
+     * replace
+     */
+    @Test
+    public void sqlFunction_replace(){
+        List<String> result = queryFactory
+                .select(Expressions.stringTemplate(
+                        "function('replace', {0},{1},{2})",
+                        member.username, "member", "M")) // username에서 member를 M으로 replace
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+
+/*      s = M1
+        s = M2
+        s = M3
+        s = M4
+*/
+    }
+
+    /**
+     * SQL function
+     * lower 소문자 변경
+     */
+    @Test
+    public void sqlFunction_lower(){
+        List<Member> result = queryFactory
+                .select(member) // username에서 member를 M으로 replace
+                .from(member)
+                .where(member.username.eq(member.username.lower())) // 일반적으로 db에서 다 제공하는 기능들은 querydsl에서 구현되어 있음(안시 표준)
+//                .where(member.username.eq(
+//                        Expressions.stringTemplate(
+//                                "function('lower', {0})",
+//                                member.username)))
+                .fetch();
+
+        for (Member member1 : result) {
+            System.out.println("member1 = " + member1);
+        }
     }
 
 }
