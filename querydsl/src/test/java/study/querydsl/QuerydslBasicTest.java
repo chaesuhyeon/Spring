@@ -503,6 +503,7 @@ public class QuerydslBasicTest {
 
     /**
      * case 문
+     * when.then  otherwise 사용
      */
     @Test
      public void basicCase(){
@@ -528,6 +529,7 @@ public class QuerydslBasicTest {
 
     /**
      * 복잡한 Case문
+     * CaseBuilder() 사용
      */
     @Test
     public void complexCase(){
