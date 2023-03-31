@@ -25,4 +25,11 @@ public class ServletExController {
     public void error500(HttpServletResponse response) throws IOException {
         response.sendError(500, "500 오류!");
     }
+
 }
+
+/**
+ * response.sendError를 호출하면 response 내부에는 오류가 발생했다는 상태를 저장해둔다.
+ * 그리고 서블릿 컨테이너는 고객에게 응답 전에 response에 sendError()가 호출되었는지 확인한다.
+ * 그리고 호출되었다면 설정한 오류 코드에 맞추어 기본 오류 페이지를 보여준다.
+ */
