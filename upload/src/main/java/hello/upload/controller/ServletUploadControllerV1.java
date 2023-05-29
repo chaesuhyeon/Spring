@@ -29,6 +29,9 @@ public class ServletUploadControllerV1 {
         String itemName = request.getParameter("itemName");
         log.info("itemName={}" , itemName);
 
+        /**
+         * part : multipart-form-data에서 각 항목별로 구분된 것을 각각 받아볼 수 있는것
+         */
         Collection<Part> parts = request.getParts();
         log.info("parts={}" , parts);
         return "upload-form";

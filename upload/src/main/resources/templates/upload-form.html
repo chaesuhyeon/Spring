@@ -9,7 +9,7 @@
         <h2>상품 등록 폼</h2>
     </div>
     <h4 class="mb-3">상품 입력</h4>
-    <form th:action method="post" enctype="multipart/form-data">
+    <form th:action method="post" enctype="multipart/form-data"> <!-- enctype 필수 사용!! -->
         <ul>
             <li>상품명 <input type="text" name="itemName"></li>
             <li>파일<input type="file" name="file" ></li>
