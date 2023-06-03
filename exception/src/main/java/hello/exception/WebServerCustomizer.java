@@ -5,7 +5,7 @@ import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-//@Component 스프링 부트는 WebServerCustomizer 기능을 기본적으로 제공해주기 때문에 주석처리
+//@Component //스프링 부트는 WebServerCustomizer 기능을 기본적으로 제공해주기 때문에 주석처리
 public class WebServerCustomizer implements WebServerFactoryCustomizer<ConfigurableWebServerFactory> {
 
     @Override
