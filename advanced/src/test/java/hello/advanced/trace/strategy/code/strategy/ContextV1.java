@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
  * ContextV1은 변하지 않는 로직을 가지고 있는 템플릿 코드
  * Context는 내부에 Strategy strategy 필드를 가지고 있다. 이는 필드에 변하는 부분인 Strategy 의 구현체를 주입하면된다.
  * 전략 패턴의 핵심은 Context는 Strategy 인터페이스에만 의존한다는 것이다.
- * 덕분에 Strategy 구현체를 변경하거ㅏㄴ 새로 만들어도  Context 코드에는 영향을 주지 않는다.
+ * 덕분에 Strategy 구현체를 변경하거나 새로 만들어도  Context 코드에는 영향을 주지 않는다.
  */
 @Slf4j
 public class ContextV1 {
