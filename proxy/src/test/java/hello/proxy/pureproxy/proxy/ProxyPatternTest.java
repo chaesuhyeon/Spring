@@ -1,5 +1,6 @@
 package hello.proxy.pureproxy.proxy;
 
+import hello.proxy.pureproxy.proxy.code.CacheProxy;
 import hello.proxy.pureproxy.proxy.code.ProxyPatternClient;
 import hello.proxy.pureproxy.proxy.code.RealSubject;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,21 @@ public class ProxyPatternTest {
 
         // 같은 로직 3번 호출 (각 1초씩 걸리므로 총 3초 걸림)
         // 조회한 값이 변하지 않는 데이터라면 어딘가에 보관해두고 이미 조회한 데이터를 사용하는 것이 성능상 좋음 (캐시)
+        client.execute();
+        client.execute();
+        client.execute();
+    }
+
+    /**
+     * client -> proxy -> realSubject
+     * proxy에서 realSubject를 참조하고, client에서는 proxy를 참조한다.
+     */
+    @Test
+    void cacheProxyTest() {
+        RealSubject realSubject = new RealSubject();
+        CacheProxy cacheProxy = new CacheProxy(realSubject);
+        ProxyPatternClient client = new ProxyPatternClient(cacheProxy);
+
         client.execute();
         client.execute();
         client.execute();
