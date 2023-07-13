@@ -2,6 +2,7 @@ package hello.proxy;
 
 import hello.proxy.config.AppV1Config;
 import hello.proxy.config.AppV2Config;
+import hello.proxy.config.v1_proxy.ConcreteProxyConfig;
 import hello.proxy.config.v1_proxy.InterfaceProxyConfig;
 import hello.proxy.trace.logtrace.LogTrace;
 import hello.proxy.trace.logtrace.ThreadLocalLogTrace;
@@ -16,7 +17,8 @@ import org.springframework.context.annotation.Import;
  * 따라서 컴포넌트 스캔에 의해 hello.proxy.config 위치의 설정 파일들이 스프링 빈으로 자동등록되지 않도록 컴포넌트 스택의 시작 위치를 hello.proxy.app으로 설정했다.
  */
 //@Import({AppV1Config.class, AppV2Config.class})
-@Import(InterfaceProxyConfig.class)
+//@Import(InterfaceProxyConfig.class)
+@Import(ConcreteProxyConfig.class)
 @SpringBootApplication(scanBasePackages = "hello.proxy.app") //주의, app 디렉토리 하위에 있는 파일들만 컴포넌트 대상
 public class ProxyApplication {
 
