@@ -17,14 +17,12 @@ public class BeanPostProcessorTest {
     void basicConfig() {
         ApplicationContext applicationContext = new AnnotationConfigApplicationContext(BeanPostProcessorConfig.class); // beanA라는 이름으로 스프링 빈으로 등록한다.
 
-        // A는 빈으로 등록된다.
-        A a = applicationContext.getBean("beanA", A.class);
-        a.helloA();
+        // beanA 이름으로 B객체가  빈으로 등록된다.
+        B b = applicationContext.getBean("beanA", B.class);
+        b.helloB();
 
-        // B는 스프링 빈으로 등록되지 않는다. (BasicConfig.class에서 정의를 하지 않았으므로)
-        Assertions.assertThrows(NoSuchBeanDefinitionException.class, () -> {
-            B b = applicationContext.getBean(B.class);
-        });
+        // A는 스프링 빈으로 등록되지 않는다. (BeanPostProcessorConfig.class에서 정의를 하지 않았으므로)
+        Assertions.assertThrows(NoSuchBeanDefinitionException.class, () -> applicationContext.getBean(A.class));
 
     }
 
@@ -59,18 +57,13 @@ public class BeanPostProcessorTest {
 
     @Slf4j
     static class AtoBPostProcessor implements BeanPostProcessor {
-/*
-        @Override
-        public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-            return BeanPostProcessor.super.postProcessBeforeInitialization(bean, beanName);
-        }
-*/
 
         @Override
         public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
            log.info("beanName={}, bean={}",beanName, bean );
 
-           if (bean instanceof A) { // A가 넘어오면 B를 반환
+           // 파라미터로 넘어온 빈 (bean) 객체가 A의 인스턴스이면 새로운 B 객체를 생성해서 반환한다. 여기서 A 대신에 반환된 값인 B가 스프링 컨테이너에 등록된다.
+           if (bean instanceof A) {
                return new B();
            }
 
