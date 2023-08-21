@@ -8,7 +8,7 @@ import org.springframework.core.annotation.Order;
 
 // 스프링 빈으로 등록 필수
 @Slf4j
-@Aspect
+//@Aspect
 public class AspectV6Advice {
 
     // hello.aop.order 패키지와 하위 패키지 이면서 클래스 이름 패턴이 *Service
