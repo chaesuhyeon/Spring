@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<form th:object="${form}" th:method="post">
+  th:field <input type="text" th:field="*{ipPort}"> <br/> <!-- 127.0.0.1:8080 --> <!-- 컨버터 자동 적용된 값 -->
+  th:value <input type="text" th:value="*{ipPort}">(보여주기 용도)<br/> <!-- helllo.typeconverter.type.IpPort@59cb0946 --> <!-- 컨버터 적용 안된 값 -->
+  <input type="submit">
+</form>
+
+</body>
+</html>

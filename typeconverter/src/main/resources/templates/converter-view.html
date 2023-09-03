@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<ul>
+    <!-- {{ }} 를 사용하게 되면 컨버터를 적용하겠다는 뜻이다.   -->
+    <!-- 타임리프는 {{ }}는 문자로 출력이 되어야 하므로 String으로 변환해주는 컨버터가 사용되어야 한다.   -->
+    <li>${number} : <span th:text="${number}"></span></li> <!-- 10000 -->
+    <li>${{number}} : <span th:text="${{number}}"></span></li> <!-- 10000 --> <!-- 이때 IntegerToStringConverter 호출 -->
+    <li>${ipPort} : <span th:text="${ipPort}"></span></li> <!--  helllo.typeconverter.type.IpPort@59cb0946 --> <!-- 객체를 출력하려면 ipPort.toString()의 결과가 나온다. -->
+    <li>${{ipPort}} : <span th:text="${{ipPort}}"></span></li> <!-- 127.0.0.1:8080 --> <!-- 이때 IpPortToStringConverter 호출 -->
+</ul>
