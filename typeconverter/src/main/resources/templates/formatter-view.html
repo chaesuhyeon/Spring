@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+</head>
+<body>
+<ul>
+  <!-- { 가 1개 있으면 포맷터 적용x , {가 2개 있으면 ({{) 포맷터 적용  -->
+  <li>${form.number}: <span th:text="${form.number}" ></span></li>   <!-- 포맷터 적용 x  -->
+  <li>${{form.number}}: <span th:text="${{form.number}}" ></span></li> <!-- 포맷터 적용  -->
+  <li>${form.localDateTime}: <span th:text="${form.localDateTime}" ></span></li> <!-- 포맷터 적용 x -->
+  <li>${{form.localDateTime}}: <span th:text="${{form.localDateTime}}" ></span></li>
+</ul>
+</body>
+</html>
