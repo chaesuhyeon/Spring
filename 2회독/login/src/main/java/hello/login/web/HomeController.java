@@ -2,6 +2,7 @@ package hello.login.web;
 
 import hello.login.domain.member.Member;
 import hello.login.domain.member.MemberRepository;
+import hello.login.web.argumentresolver.Login;
 import hello.login.web.session.SessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -91,8 +92,21 @@ public class HomeController {
      *  SessionAttribute 는 session에서 LOGIN_MEMBER를 찾아서 자동으로 Member를 넣어준다.
      *  SessionAttribute는 세션을 생성하지 않는다.
      */
-    @GetMapping("/")
+    //@GetMapping("/")
     public String homeLoginV3Spring(@SessionAttribute(name = SessionConst.LOGIN_MEMBER, required = false) Member member, Model model) {
+
+        // 세션이 회원 데이터가 없으면 home
+        if(member == null) {
+            return "home";
+        }
+
+        // 세션이 유지되면 로그인으로 이동
+        model.addAttribute("member", member);
+        return "loginHome";
+    }
+
+    @GetMapping("/")
+    public String homeLoginV3ArgumentResolver(@Login Member member, Model model) {
 
         // 세션이 회원 데이터가 없으면 home
         if(member == null) {
