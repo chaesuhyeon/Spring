@@ -23,6 +23,7 @@ public class Order {
     @Column(name = "order_id")
     private Long id;
 
+    /* 절대 EAGER로 변경하면 안된다. EAGER로 변경하면 성능을 최적화 시킬 여지가 없다. */
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "member_id")
     private Member member;

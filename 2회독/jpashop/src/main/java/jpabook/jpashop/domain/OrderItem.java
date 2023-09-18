@@ -24,6 +24,9 @@ public class OrderItem {
     @JoinColumn(name = "item_id")
     private Item item;
 
+    /**
+     * 엔티티를 직접 노출할 경우 엔티티에서 양방향으로 참조하는 곳을 한쪽을 @JsonIgnore을 사용해서 무한루프를 끊어줘야 한다
+     */
     @JsonIgnore
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "order_id")
