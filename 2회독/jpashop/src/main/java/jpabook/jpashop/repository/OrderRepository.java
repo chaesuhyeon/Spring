@@ -11,6 +11,9 @@ import javax.persistence.criteria.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * repository는 순수하게 엔티티만 조회하는 곳
+ */
 @Repository
 public class OrderRepository {
 

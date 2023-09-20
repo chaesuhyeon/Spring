@@ -5,6 +5,8 @@ import jpabook.jpashop.domain.Order;
 import jpabook.jpashop.domain.OrderStatus;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
+import jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryDto;
+import jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +26,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class OrderSimpleApiController {
     private final OrderRepository orderRepository;
+    private final OrderSimpleQueryRepository orderSimpleQueryRepository;
 
     /**
      * 엔티티를 그대로 반환하는 방법 (지양해야할 방법)
@@ -65,6 +68,15 @@ public class OrderSimpleApiController {
         return orders.stream()
                 .map(SimpleOrderDto::new) // map(o -> new SimpleOrderDto(o))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * dto로 반환
+     * 리포지토리 재사용성이 떨어진다. (api 스펙에 맞춘 코드가 리포지토리에 들어가는 단점)
+     */
+    @GetMapping("/api/v4/simple-orders")
+    public List<OrderSimpleQueryDto> ordersV4() {
+        return orderSimpleQueryRepository.findOrderDtos();
     }
 
 
