@@ -1,13 +1,18 @@
 package jpabook.jpashop.api;
 
+import jpabook.jpashop.domain.Address;
 import jpabook.jpashop.domain.Order;
+import jpabook.jpashop.domain.OrderStatus;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * xToOne(ManyToOne, OneToOne)
@@ -33,5 +38,52 @@ public class OrderSimpleApiController {
             order.getDelivery().getAddress();
         }
         return all;
+    }
+
+    /**
+     * N + 1 문제 존재
+     * order 조회 1번 (order의 조회 결과수 N)
+     * order -> Member 지연 로딩 조회 N번
+     * order -> Delivery 지연 로딩 조회 N번
+     * 만약 order의 결과가 4개라면 최악의 경우 1 + 4 + 4 번 실행된다.
+     */
+    @GetMapping("/api/v2/simple-orders")
+    public List<SimpleOrderDto> ordersV2() {
+        List<Order> orders = orderRepository.findAllByString(new OrderSearch());
+        return orders.stream()
+                .map(SimpleOrderDto::new) // map(o -> new SimpleOrderDto(o))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * V2는 N+1문제 발생으로 너무 많은 쿼리가 나가고 있다.
+     * 해당 문제를 해결하기 위해 패치조인을 한다.
+     */
+    @GetMapping("/api/v3/simple-orders")
+    public List<SimpleOrderDto> ordersV3() {
+        List<Order> orders = orderRepository.findAllWithMemberDelivery();
+        return orders.stream()
+                .map(SimpleOrderDto::new) // map(o -> new SimpleOrderDto(o))
+                .collect(Collectors.toList());
+    }
+
+
+
+    @Data
+
+    private class SimpleOrderDto {
+        private Long orderId;
+        private String name;
+        private LocalDateTime orderDate;
+        private OrderStatus orderStatus;
+        private Address address;
+
+        public SimpleOrderDto(Order order) {
+            orderId = order.getId();
+            name = order.getMember().getName(); // lazy 초기화
+            orderDate = order.getOrderDate();
+            orderStatus = order.getStatus();
+            address = order.getMember().getAddress(); // lazy 초기화
+        }
     }
 }
