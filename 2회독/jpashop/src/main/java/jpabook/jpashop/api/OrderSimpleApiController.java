@@ -1,13 +1,20 @@
 package jpabook.jpashop.api;
 
+import jpabook.jpashop.domain.Address;
 import jpabook.jpashop.domain.Order;
+import jpabook.jpashop.domain.OrderStatus;
 import jpabook.jpashop.repository.OrderRepository;
 import jpabook.jpashop.repository.OrderSearch;
+import jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryDto;
+import jpabook.jpashop.repository.order.simplequery.OrderSimpleQueryRepository;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * xToOne(ManyToOne, OneToOne)
@@ -19,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderSimpleApiController {
     private final OrderRepository orderRepository;
+    private final OrderSimpleQueryRepository orderSimpleQueryRepository;
 
     /**
      * 엔티티를 그대로 반환하는 방법 (지양해야할 방법)
@@ -33,5 +41,61 @@ public class OrderSimpleApiController {
             order.getDelivery().getAddress();
         }
         return all;
+    }
+
+    /**
+     * N + 1 문제 존재
+     * order 조회 1번 (order의 조회 결과수 N)
+     * order -> Member 지연 로딩 조회 N번
+     * order -> Delivery 지연 로딩 조회 N번
+     * 만약 order의 결과가 4개라면 최악의 경우 1 + 4 + 4 번 실행된다.
+     */
+    @GetMapping("/api/v2/simple-orders")
+    public List<SimpleOrderDto> ordersV2() {
+        List<Order> orders = orderRepository.findAllByString(new OrderSearch());
+        return orders.stream()
+                .map(SimpleOrderDto::new) // map(o -> new SimpleOrderDto(o))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * V2는 N+1문제 발생으로 너무 많은 쿼리가 나가고 있다.
+     * 해당 문제를 해결하기 위해 패치조인을 한다.
+     */
+    @GetMapping("/api/v3/simple-orders")
+    public List<SimpleOrderDto> ordersV3() {
+        List<Order> orders = orderRepository.findAllWithMemberDelivery();
+        return orders.stream()
+                .map(SimpleOrderDto::new) // map(o -> new SimpleOrderDto(o))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * dto로 반환
+     * 리포지토리 재사용성이 떨어진다. (api 스펙에 맞춘 코드가 리포지토리에 들어가는 단점)
+     */
+    @GetMapping("/api/v4/simple-orders")
+    public List<OrderSimpleQueryDto> ordersV4() {
+        return orderSimpleQueryRepository.findOrderDtos();
+    }
+
+
+
+    @Data
+
+    private class SimpleOrderDto {
+        private Long orderId;
+        private String name;
+        private LocalDateTime orderDate;
+        private OrderStatus orderStatus;
+        private Address address;
+
+        public SimpleOrderDto(Order order) {
+            orderId = order.getId();
+            name = order.getMember().getName(); // lazy 초기화
+            orderDate = order.getOrderDate();
+            orderStatus = order.getStatus();
+            address = order.getMember().getAddress(); // lazy 초기화
+        }
     }
 }

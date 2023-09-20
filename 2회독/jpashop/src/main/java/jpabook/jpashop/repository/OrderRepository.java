@@ -11,6 +11,9 @@ import javax.persistence.criteria.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * repository는 순수하게 엔티티만 조회하는 곳
+ */
 @Repository
 public class OrderRepository {
 
@@ -104,7 +107,7 @@ public class OrderRepository {
     public List<Order> findAllWithMemberDelivery() {
         return em.createQuery(
                 "select o from Order o" +
-                        " join fetch o.member m" +
+                        " join fetch o.member m" + // fetch join
                         " join fetch o.delivery d", Order.class)
                 .getResultList();
     }
