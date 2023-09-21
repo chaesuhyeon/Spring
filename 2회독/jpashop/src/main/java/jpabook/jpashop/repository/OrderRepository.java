@@ -112,6 +112,9 @@ public class OrderRepository {
                 .getResultList();
     }
 
+    /**
+     * distinct를 사용하지 않으면 data가 order*(orderItem 개수) 만큼 나온다
+     */
     public List<Order> findAllWithItem() {
         return em.createQuery(
                 "select distinct o from Order o" +

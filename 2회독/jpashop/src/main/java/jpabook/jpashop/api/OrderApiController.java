@@ -48,6 +48,20 @@ public class OrderApiController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * fetch join + distinct
+     * distinct는 sql에 distinct를 추가하고, 더해서 같은 엔티티가 조회되면 애플리케이션에서 중복을 걸러준다.
+     * - order가 컬렉션 페치 조인 때문에 중복 조회 되는 것을 막아준다.
+     * 단점 : 1대 다를 페이징 하는 순간 페이징 불가능!!
+     */
+    @GetMapping("/api/v3/orders")
+    public List<OrderDto> ordersV3() {
+        List<Order> orders = orderRepository.findAllWithItem();
+        return orders.stream()
+                .map(o -> new OrderDto(o))
+                .collect(Collectors.toList());
+    }
+
     @Getter
     static class OrderDto {
 
