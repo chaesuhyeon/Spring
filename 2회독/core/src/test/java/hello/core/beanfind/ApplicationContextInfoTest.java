@@ -4,6 +4,7 @@ import hello.core.AppConfig;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 public class ApplicationContextInfoTest {
@@ -31,5 +32,20 @@ public class ApplicationContextInfoTest {
                 name = discountPolicy object = hello.core.discount.RateDiscountPolicy@3d8bbcdc
             */
         }
+    }
+
+    @Test
+    @DisplayName("애플리케이션 빈 출력하기")
+    void findApplicationBean(){
+        String[] beanDefinitionNames = ac.getBeanDefinitionNames();
+        for (String beanDefinitionName : beanDefinitionNames) {
+            BeanDefinition beanDefinition = ac.getBeanDefinition(beanDefinitionName); // getBeanDefinition -> bean에 대한 meta data 정보
+
+            if (beanDefinition.getRole() == BeanDefinition.ROLE_APPLICATION) { // ROLE_APPLICATION : 직접 등록한 애플리케이션 빈
+                Object bean = ac.getBean(beanDefinitionName);
+                System.out.println("name = " + beanDefinitionName + "object = " + bean);
+            }
+        }
+
     }
 }
